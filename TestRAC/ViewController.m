@@ -34,14 +34,14 @@
      */
     
     RACSignal *buttonSignal = [self.throttleButton rac_signalForControlEvents:UIControlEventTouchUpInside];
-    //节流, 收到next信号后,将会等待1秒,如果在这期间还收到了信号,则保存最新的信号,并重新开始即时, 类似于coco中的performSelete...delay:
+    //throttle:节流, 收到next信号后,将会等待1秒,如果在这期间还收到了信号,则保存最新的信号,并重新开始即时, 类似于coco中的performSelete...delay:
     /*
     [[buttonSignal throttle:1].deliverOnMainThread subscribeNext:^(id x) {
         NSLog(@"%@", x);
     }];
      */
     
-    //当2个信号都send next后, 才会向下传递
+    //当2个信号都send next后, 才会向下传递 这里没有先后发送next的顺序
     /*
     [[signal combineLatestWith:buttonSignal].deliverOnMainThread subscribeNext:^(id x) {
         NSLog(@"combineLatestWith: %@", x);
@@ -60,7 +60,7 @@
     }];
      */
     
-    //信号正常发送后,如果需要将等待后面信号完成后将会收到next信号
+    //delay: 信号正常发送后,如果需要将等待后面信号完成后将会收到next信号
     /*
     [[buttonSignal combineLatestWith:[[RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
         //        @strongify(self);
@@ -118,31 +118,6 @@
         NSLog(@"%@", x);
     }];
     */
-    
-    //falatten
-    ///待验证
-//    RACSignal *stringSignal = [[RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
-//        [subscriber sendNext:@"This is a string signal"];
-//        [subscriber sendNext:@"This is a string signal-1"];
-//        [subscriber sendNext:@"This is a string signal-2"];
-//        [subscriber sendCompleted];
-//        //        [subscriber sendError:@"error"];
-//        return [RACDisposable disposableWithBlock:^{
-//            
-//        }];
-//    }] delay:2];
-//    
-//    RACSignal *intSignal = [[RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
-//        [subscriber sendNext:@(99019200)];
-//        [subscriber sendCompleted];
-//        return [RACDisposable disposableWithBlock:^{
-//            
-//        }];
-//    }] delay:3];
-
-//    [[[stringSignal flatten:10] deliverOnMainThread] subscribeNext:^(id x) {
-//        NSLog(@"%@", x);
-//    }];
     
     //then, 当string signal completed后,执行int signal, 同样,如果有错误,则立即发出, 并且不用执行int signal
     /*
@@ -340,6 +315,103 @@
     
 #endif
     
+    
+#if 0
+    //defer: 延迟调用, 当defer signal 被subscribe时, 才会返回真正的信号
+    RACSignal *deferSignal = [RACSignal defer:^RACSignal *{
+        return [RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+            [subscriber sendNext:@"this is a defer signal"];
+            [subscriber sendCompleted];
+            
+            return nil;
+        }];
+    }] ;
+    
+    [deferSignal subscribeNext:^(id x) {
+        NSLog(@"defer: %@", x);
+    } error:^(NSError *error) {
+        NSLog(@"defer error: %@", error);
+    }];
+    
+#endif
+    
+#if 0
+    //将会交换信号根据case中的配置.
+//    [RACSignal switch:<#(RACSignal *)#> cases:<#(NSDictionary *)#> default:<#(RACSignal *)#>]
+    
+#endif
+    
+#if 0
+    //+ (RACSignal *)if:(RACSignal *)boolSignal then:(RACSignal *)trueSignal else:(RACSignal *)falseSignal;
+    //类似于 if ... else ..,
+    [[RACSignal if:[[RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+        
+        [subscriber sendNext:@(1)];
+        [subscriber sendCompleted];
+//        [subscriber sendError:@"nil"];
+        return nil;
+        
+    }] delay:2] then:[RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+        [subscriber sendNext:@"This is true signal"];
+        [subscriber sendCompleted];
+        return nil;
+    }] else:[RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+        [subscriber sendNext:@"This is false signal"];
+        [subscriber sendCompleted];
+        return nil;
+    }]] subscribeNext:^(id x) {
+        NSLog(@"if signal: %@", x);
+    } error:^(NSError *error) {
+        NSLog(@"if signal error: %@", error);
+    }];
+    
+#endif
+    
+#if 0 //reduceApply 带验证
+    RACSignal *returnSignal = [RACSignal return:^(NSNumber *a, NSNumber *b) {
+        return @(a.integerValue + b.integerValue);
+    }];
+    
+    RACSignal *sums = [[RACSignal combineLatest:@[returnSignal, @(2), @(8)]] reduceApply];
+    
+    [sums subscribeNext:^(id x) {
+        NSLog(@"%reduce apply: @", x);
+    } error:^(NSError *error) {
+        NSLog(@"reduce apply error: %@", error);
+    }];
+    
+#endif
+    
+#if 1
+#endif
+    
+#if 1
+#endif
+    //falatten
+    ///待验证
+//    RACSignal *stringSignal = [[RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+//        [subscriber sendNext:@"This is a string signal"];
+//        [subscriber sendNext:@"This is a string signal-1"];
+//        [subscriber sendNext:@"This is a string signal-2"];
+//        [subscriber sendCompleted];
+//        //        [subscriber sendError:@"error"];
+//        return [RACDisposable disposableWithBlock:^{
+//
+//        }];
+//    }] delay:2];
+//
+//    RACSignal *intSignal = [[RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
+//        [subscriber sendNext:@(99019200)];
+//        [subscriber sendCompleted];
+//        return [RACDisposable disposableWithBlock:^{
+//
+//        }];
+//    }] delay:3];
+
+//    [[[stringSignal flatten:10] deliverOnMainThread] subscribeNext:^(id x) {
+//        NSLog(@"%@", x);
+//    }];
+    
 #if 0
     //first .... 待验证
     RACSignal *stringSignal = [[RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
@@ -363,7 +435,7 @@
     
 #endif
 
-#if 1
+#if 0
     //switchToLatest .... 待验证 将sendnext中的信号
     RACSignal *stringSignal = [[RACSignal createSignal:^RACDisposable *(id<RACSubscriber> subscriber) {
         [subscriber sendNext:@"This is a string signal"];
