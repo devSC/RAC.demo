@@ -11,6 +11,8 @@
 
 @interface ViewController ()
 @property (weak, nonatomic) IBOutlet UIButton *throttleButton;
+@property (weak, nonatomic) IBOutlet UITextField *textField;
+@property (weak, nonatomic) IBOutlet UITextField *anotherTextField;
 @property (strong, nonatomic) RACCommand *commond;
 @end
 
@@ -28,9 +30,20 @@
 //    [self testFlatter];
 //    [self testFlattermap];
 //    [self testThen];
+//    [self testSwitching];
+//    [self testChannel];
     
-    [self testSwitching];
+    //http://draveness.me/   
+}
+
+- (void)testChannel {
+    ///channel 允许 2个Channel信号之间双向绑定.
     
+    //textField -> bind to another
+    [self.textField.rac_newTextChannel subscribe:self.anotherTextField.rac_newTextChannel];
+    
+    //another -> bind to textField
+    [self.anotherTextField.rac_newTextChannel subscribe:self.textField.rac_newTextChannel];
 }
 
 - (void)testSwitching {
